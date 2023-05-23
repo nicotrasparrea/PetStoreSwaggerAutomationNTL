@@ -84,18 +84,21 @@ public class PetImplementation {
         JsonNode jsonObject = mapper.readTree(jsonString);
         ((ObjectNode) jsonObject).put("name", updateName);
 
-        validationResponse = given().log().all()
-                .contentType(ContentType.JSON).body(jsonObject.toString()).put();
+        validationResponse = given().log().all().contentType(ContentType.JSON)
+                .body(jsonObject.toString())
+                .put();
     }
 
     @Given("we send the post request that adds a pet with name {string} and status {string}")
     public void weSendThePostRequestThatAddsAPetWithNameAndStatus(String petName, String petStatus) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonObject = mapper.readTree(JsonUtils.readFileAsString(DATA_PATH + BODY_ADD_FILEPATH));
-        ((ObjectNode) jsonObject).put("name", petName).put("status", petStatus);
+        ((ObjectNode) jsonObject).put("name", petName)
+                .put("status", petStatus);
 
-        addResponse = given().log().all().contentType(ContentType.JSON)
-                .body(jsonObject.toString()).post();
+        addResponse = given().log().all()//.contentType(ContentType.JSON)
+                .body(jsonObject.toString())
+                .post();
     }
 
     @When("we send the get request that returns the pets by status {string}")
