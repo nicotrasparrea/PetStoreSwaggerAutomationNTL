@@ -18,8 +18,6 @@ import utils.JsonUtils;
 import java.io.IOException;
 
 import static io.restassured.RestAssured.given;
-import static junit.framework.Assert.assertTrue;
-
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 
