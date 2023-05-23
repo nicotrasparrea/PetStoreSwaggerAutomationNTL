@@ -15,6 +15,7 @@ Feature: Validate pets
   @updatePetOK
   Scenario Outline: Update an existing pet
     Given we send the post request that adds a pet with name "<petName>"
+    And we validate the response is 200 for pet
     When we send the put request that updates pets with new name "<updatedName>"
     And we validate the response is 200 for pet
     Then we validate the body response contains the pet name "<updatedName>"

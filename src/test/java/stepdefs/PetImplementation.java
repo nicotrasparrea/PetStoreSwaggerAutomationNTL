@@ -3,16 +3,14 @@ package stepdefs;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
+import support.SharedFields;
 import utils.JsonUtils;
 
 import java.io.IOException;
@@ -28,13 +26,8 @@ public class PetImplementation {
     private static final String FIND_BY_STATUS_ENDPOINT = "findByStatus";
     private String jsonId;
 
-    Response validationResponse;
-    Response addResponse;
-
-    @Before("@petSuite")
-    public void before() {
-        RestAssured.baseURI = "https://petstore.swagger.io/v2/pet/";
-    }
+    private Response validationResponse;
+    private static Response addResponse;
 
     @And("we validate the response is {int} for pet")
     public void validateResposeCode(int responseCode) {
@@ -60,6 +53,7 @@ public class PetImplementation {
 
         addResponse = given().log().all()
                 .contentType(ContentType.JSON).body(jsonObject.toString()).post();
+        SharedFields.setResponse(addResponse);
     }
 
     @And("we validate the body contains key name")
@@ -96,14 +90,15 @@ public class PetImplementation {
         ((ObjectNode) jsonObject).put("name", petName)
                 .put("status", petStatus);
 
-        addResponse = given().log().all()//.contentType(ContentType.JSON)
+        addResponse = given().log().all().contentType(ContentType.JSON)
                 .body(jsonObject.toString())
                 .post();
+        SharedFields.setResponse(addResponse);
     }
 
     @When("we send the get request that returns the pets by status {string}")
     public void weSendTheGetRequestThatReturnsThePetsByStatus(String petStatus) {
-        validationResponse = given().log().all()
+        validationResponse = given()
                 .param("status", petStatus)
                 .get(FIND_BY_STATUS_ENDPOINT);
     }
@@ -111,14 +106,14 @@ public class PetImplementation {
     @Then("we validate the body response contains objects with status {string}")
     public void weValidateTheBodyResponseContainsObjectsWithStatus(String petStatus) {
         // Validar usando assertTrue y recorriendo la lista, o de esta forma?
-        validationResponse.then().log().all()
+        validationResponse.then()
                 .body("status", everyItem(equalTo(petStatus)));
     }
 
     @Then("we validate the body response contains the pet name {string} in the list")
     public void weValidateTheBodyResponseContainsThePetNameInTheList(String petName) {
         // Validar usando assertTrue y recorriendo la lista, o de esta forma?
-        validationResponse.then().log().all()
+        validationResponse.then()
                 .body("name", hasItem(petName));
     }
 
@@ -153,12 +148,5 @@ public class PetImplementation {
         String actualId = jsonPathPets.getString("message");
         assertEquals("ERROR: Pet IDs dont match",
                 jsonId, actualId);
-    }
-
-    @After("@petSuite and not @delete")
-    public void after() {
-        JsonPath jsonPathPets = new JsonPath(addResponse.body().asString());
-        String jsonIdCreate = jsonPathPets.getString("id");
-        given().log().all().delete(jsonIdCreate);
     }
 }

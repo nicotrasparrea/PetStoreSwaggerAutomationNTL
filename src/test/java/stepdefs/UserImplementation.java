@@ -3,16 +3,14 @@ package stepdefs;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
+import support.SharedFields;
 import utils.JsonUtils;
 
 import java.io.IOException;
@@ -30,11 +28,6 @@ public class UserImplementation {
     private Response validationResponse;
     private Response addResponse;
 
-    @Before("@userSuite")
-    public void before() {
-        RestAssured.baseURI = "https://petstore.swagger.io/v2/user/";
-    }
-
     @Given("we send the post request that adds a user with username {string}")
     public void weSendThePostRequestThatAddsAUserWithName(String username) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
@@ -45,6 +38,7 @@ public class UserImplementation {
                 .body(jsonObject.toString())
                 .post();
         createdUsername = username;
+        SharedFields.setResponse(createdUsername);
     }
 
     @And("we validate the response is {int} for user")
@@ -63,6 +57,7 @@ public class UserImplementation {
 
     @Then("we validate the body response contains the username {string}")
     public void weValidateTheBodyResponseContainsTheUsername(String username) {
+        getUserByUsername(username);
         JsonPath jsonPathUser = new JsonPath(validationResponse.body().asString());
         String actualUsername = jsonPathUser.getString("username");
 
@@ -78,11 +73,13 @@ public class UserImplementation {
 
         validationResponse = given().log().all().contentType(ContentType.JSON)
                 .body(jsonObject.toString())
-                .put();
+                .put(createdUsername);
+        createdUsername = updateUsername;
+        SharedFields.setResponse(createdUsername);
     }
 
     @When("we send the get request that returns the user filtered by username {string}")
-    public void weSendTheGetRequestThatReturnsTheUserFilteredByUsername(String username) {
+    public void getUserByUsername(String username) {
         validationResponse = given().log().all()
                 .get(username);
     }
@@ -90,18 +87,13 @@ public class UserImplementation {
     @Then("we validate the body response contains the user with expected ID")
     public void weValidateTheBodyResponseContainsTheUserWithID() {
         JsonPath jsonPathAddUser = new JsonPath(addResponse.body().asString());
-        long expectedId = jsonPathAddUser.getLong("id");
+        long expectedId = jsonPathAddUser.getLong("message");
 
         JsonPath jsonPathGetUser = new JsonPath(validationResponse.body().asString());
         long actualId = jsonPathGetUser.getLong("id");
 
         assertEquals("ERROR: User IDs do not match",
                 expectedId, actualId);
-    }
-
-    @After("@userSuite and not @deleteUser and not @getUser")
-    public void after() {
-        given().log().all().delete(createdUsername);
     }
 
     @When("we send the delete request that deletes a  user by username {string}")
