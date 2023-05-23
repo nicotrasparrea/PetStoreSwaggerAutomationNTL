@@ -49,5 +49,5 @@ Feature: Validate users
     Then we validate the body response contains the user with expected ID
 
     Examples:
-      | username       |
-      | TestUsernameTL |
+      | username        |
+      | TestUsernameGet |

@@ -3,16 +3,14 @@ package stepdefs;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
+import support.SharedFields;
 import utils.JsonUtils;
 
 import java.io.IOException;
@@ -35,11 +33,6 @@ public class StoreImplementation {
     Response validationResponse;
     Response addResponse;
 
-    @Before("@storeSuite")
-    public void before() {
-        RestAssured.baseURI = "https://petstore.swagger.io/v2/store/";
-    }
-
     @Given("we send the post request that adds an order with pet ID {long}")
     public void addOrderPetId(long petId) throws IOException {
         // Pagina no añade fecha de pedido automaticamente
@@ -54,6 +47,7 @@ public class StoreImplementation {
         addResponse = given().log().all().contentType(ContentType.JSON)
                 .body(jsonObject.toString())
                 .post(ORDER_ENDPOINT);
+        SharedFields.setResponse(addResponse);
     }
 
     @And("we validate the response is {int} for store")
@@ -97,14 +91,7 @@ public class StoreImplementation {
         String jsonIdActual = jsonPathOrder.getString("id");
 
         assertEquals("ERROR: Order IDs dont match",
-                jsonId, jsonIdActual + "a");
-    }
-
-    @After("@storeSuite and not @deleteOrderIdOK and not @findInventoriesStatus")
-    public void after() {
-        JsonPath jsonPathOrder = new JsonPath(addResponse.body().asString());
-        String jsonIdCreate = jsonPathOrder.getString("id");
-        given().log().all().delete(ORDER_ENDPOINT + jsonIdCreate);
+                jsonId, jsonIdActual);
     }
 
     @When("we send the delete request that deletes an order by an ID")
